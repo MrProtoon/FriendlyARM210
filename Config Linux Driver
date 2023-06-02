@@ -1,0 +1,365 @@
+Linux嵌入式驱动开发日志
+nfs 挂接命令
+mount 192.168.1.15:/opt/FriendlyARM/mini210/mini_busybox /mnt/nfs
+
+setenv bootargs 'bootz 30008000 - 31008000:console=ttySAC0 root=/dev/nfs 
+nfsroot=192.168.1.15:/opt/FriendlyARM/mini210/mini_busybox  ip=192.168.1.230:192.168.1.15:192.168.1.1:255.255.255.0:linux.arm9.net:eth0:off'
+
+在 etc/network/interface里面配置静态ip地址
+
+eth0: dm9000a at e0838000,e083c00c IRQ 39 MAC: 08:90:00:a0:02:10 (platform data)
+
+重启NFS sudo /etc/init.d/nfs-kernel-server restart
+修改根文件目录的权限 sudo chmod 777 -R ./ubuntu-base
+
+    image.dx = (info->var.xres - logo->width) / 2;
+    image.dy = (info->var.yres - logo->height) / 2;
+    image.width = logo->width;
+    image.height = logo->height;
+
+编译内核 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- menuconfig
+用uboot系统自带的s5pv210 config文件编译uboot
+
+编译linux内核
+make s5pv210_defconfig
+make -j4
+
+
+00:40:5c:26:0a:5b
+
+No ATAGS support can't continue 问题解决办法
+在编译内核时把boot option选项里面的ATAGS选项选择为编译进内核即可
+
+/*
+    	ethernet@88000000 {
+		compatible = "davicom,dm9000";
+		/* addr */ /* data */
+        	reg = <1 0 2 1 4 2>; 
+		interrupt-parent = <&gph0>;
+		interrupts = <7 4>;
+		local-mac-address = [50 60 de ad be ef];
+		davicom,no-eeprom;
+ 
+	    reg-io-width = <2>;    //16位模式
+ 
+		samsung,waitable;
+		samsung,srom-timing = <0 0 1 3 1 0>;
+	};
+    	*/
+
+bison:not found/‘scripts/kconfig/zconf.tab.c‘ failed
+sudo apt-get install bison
+sudo apt-get install flex
+
+fatal error: openssl/bio.h: No such file or directory 
+sudo apt install openssl
+sudo apt install libssl-dev
+不用下载任何openssl库 
+
+sudo ./ch-mount.sh -m /opt/FriendlyARM/mini210/ubuntu-base/
+sudo ./ch-mount.sh -u /opt/FriendlyARM/mini210/ubuntu-base/
+
+echo "outregrous" > /etc/hostname
+echo "127.0.0.1 localhost" >> /etc/hosts
+echo "127.0.0.1 outregrous" >> /etc/hosts
+
+CheckOneButton=No
+Action = Install
+OS = Linux
+LCD-Mode = No
+LCD-Type = H43
+LowFormat = No
+VerifyNandWrite = No
+CheckCRC32=No
+StatusType = Beeper | LED
+################### Linux ####################
+Linux-BootLoader = smart210-uboot.bin
+Linux-Kernel = Linux/zImage
+Linux-CommandLine = console=ttySAC0 rw root=/dev/nfs nfsroot=192.168.1.15:/opt/FriendlyARM/mini210/mini_busybox  ip=192.168.1.230:192.168.1.15:192.168.1.1:255.255.255.0:linux.arm9.net:eth0:off
+
+common/main.c uboot启动选项类似于BIOS
+smart210-uboot-master/arch/arm/cpu/armv7/s5p-common/cpu_info.c
+
+编译uboot
+一定要注释dm9000_halt函数
+sudo apt install bison flex
+sudo apt-get install libncurses5-dev
+make distclean
+make SMART210_config
+make ARCH=arm CROSS_COMPILE=arm-linux-
+
+修改u-boot DM9000网卡驱动
+1.先在手册Tiny210V2_V1.0_120713_sch.pdf-->第11页 dm9000芯片手册 查找片选信号CS(chip select)Xm0CSn1
+2.然后在手册S5PV210_UM_REV1.1.pdf-->第61页 XM0CSN_1 对应SROM_CSn[1] 内存地址MAP
+3.s5pv210_UM_rev1.1.pdf-->第30页 SROM Bank 1 地址0x88000000-0x8FFFFFFF 128MB
+4.s5pv210_UM_rev1.1.pdf-->第648页SROM_BW 配置Bank1
+5.s5pv210_UM_rev1.1.pdf 理解DM9000时序配置
+6.s5pv210_UM_rev1.1.pdf-->第131页 GPH0DAT Port Group GPH0 Data Register
+7.DM9000网卡中断 XEINT7-->GPH0_7 
+
+uboot启动命令
+1. make s5pv210_defconfig .config
+2. make ARCH=arm LOADADDR=0x30008000 uImage 设置内核再内存中的启动地址是0x30008000
+3. mkimage 这个工具很重要,可以生成uImage
+4. 把这个函数内容注释掉static void dm9000_halt(struct eth_device *netdev)
+5. tftp 0x30007FC0 uImage 这里加载 有64K偏移
+6. bootm 0x30007FC0 - 0x31008000
+0xFFFFFFFF  uboot_smart210/board/samsung/smart210/smart210.c 修改mach-type
+因为读到的ID 都是ffffffff，判断是Linux内核没有读到设备树，我制作Linux镜像时，是把dtb附加到uimage的后面的
+#define CONFIG_LCD 1 支持LCD 会有错误
+
+再uboot中定义/*by GengH */
+#define CONFIG_OF_LIBFDT 1 /* Device Tree support */使用设备树
+tftp 0x31007FC0 s5pv210-smdkv210.dtb
+tftp 0x30007FC0 uImage
+bootm 0x30007FC0 - 0x31007FC0
+
+
+解决starting kernel.....
+linux-4.14.14/arch/arm/mach-s5pv210
+menuconfig 设置串口设备
+SMDKV210 有问题
+make mini210_linux_defconfig menuconfig kernel hacking...配置串口
+make dtbs 制作设备树文件
+dm9000 addr 0x 8FA21800
+			   8fa21a00
+			   8fa22a00
+			   8fa51100
+D:\System_Smart210\Linux\linux-4.14.14\arch\arm64\include\asm\memory.h: 
+#define MAX_MEMBLOCK_ADDR	U64_MAX memory 越界
+linux-5.9.9/​include/​linux/​limits.h 
+#define U64_MAX     ((u64)~0ULL) unsigned long long
+
+Uncompressing Linux... done, booting the kernel 
+s5pv210_defconfig device driver-->character driver 去掉IBM的选项8250 选择Samsung
+sudo apt-get --purge remove u-boot-tools mkimage工具冲突
+
+
+linux-4.14.14/arch/arm/tools mach-type.h smdkv210 2456
+linux-4.14.14/arch/arm/kernel/head.S 0x30008000
+ArpTimeoutCheck(void) 触发 ARP Retry count exceeded; starting again
+
+uname -m 打印设备的硬件架构信息
+uname –s 显示内核名称
+sed -e 编辑文件信息输出到终端上
+setenv bootargs 'initrd=0x30008000,0xa00000 root=/dev/ram0 console=ttySAC0 mem=64M init=/linuxrc'
+
+    -18.434949,37.907385,38.748051,180.000000,-13.344564, 18.434949
+     18.434949,37.907385,38.748051,180.000000,-13.344564,-18.434949
+     12.804266,55.432770, 0.239772,180.000000,-34.327458,-12.804266
+    -12.804266,55.432770, 0.239772,180.000000,-34.327458, 12.804266
+
+IP Protocol
+0x86DD	IP Protocol version 6 (IPv6) [RFC7042]
+0x0806	Address Resolution Protocol (ARP)[RFC7042]
+typedef struct
+{
+	ushort		ar_hrd;		/* Format of hardware address	*/
+#   define ARP_ETHER	    1		/* Ethernet  hardware address	*/
+	ushort		ar_pro;		/* Format of protocol address	*/
+	uchar		ar_hln;		/* Length of hardware address	*/
+	uchar		ar_pln;		/* Length of protocol address	*/
+	ushort		ar_op;		/* Operation			*/
+#   define ARPOP_REQUEST    1		/* Request  to resolve  address	*/
+#   define ARPOP_REPLY	    2		/* Response to previous request	*/
+
+#   define RARPOP_REQUEST   3		/* Request  to resolve  address	*/
+#   define RARPOP_REPLY	    4		/* Response to previous request */
+
+	/*
+	 * The remaining fields are variable in size, according to
+	 * the sizes above, and are defined as appropriate for
+	 * specific hardware/protocol combinations.
+	 */
+	uchar		ar_data[0];
+#if 0
+	uchar		ar_sha[];	/* Sender hardware address	*/
+	uchar		ar_spa[];	/* Sender protocol address	*/
+	uchar		ar_tha[];	/* Target hardware address	*/
+	uchar		ar_tpa[];	/* Target protocol address	*/
+#endif /* 0 */
+} ARP_t;
+
+ethernet@88000000 {
+		compatible = "davicom,dm9000";
+		reg = <0x88000000 0x2 0x88000008 0x2>;
+		interrupt-parent = <&gph0>;
+		interrupts = <7 4>;
+		local-mac-address = [00 40 5c 26 0a 5b];
+		davicom,no-eeprom;
+        	clocks = <&clocks CLK_SROMC>;
+        	clock-names = "sromc";
+	};
+
+Ubuntu system won’t boot with error “Failed to start Create Volatile Files and Directories + Network Time Synchronisation”
+
+Solution
+0. You can check your ownership of / and /var folder
+
+$ stat -c "%U %G" /
+or,
+$ stat -c "%U %G" /var/
+You might be getting,
+username username
+
+Start with giving ownership back to root
+$ chown -R root:root /
+it'll take a few minutes
+
+Remount.
+$ mount -o remount,rw /
+
+Restart these services.
+
+Tmpfiles-setup Services
+$ systemctl start systemd-tmpfiles-setup.service
+Timesyncd Service
+$ systemctl start systemd-timesyncd.service
+Reboot
+$ reboot
+
+ubuntu 启动卡死/死机/停 Started Update UTMP about System Runlevel Changes
+可以用alt+f2进入tty2命令行页面
+
+
+2023-5-31 
+	下载Ubuntu16.04 32位系统
+	arm-gcc-7.5.0
+	linux-4.14.14
+	smart210-uboot-master
+	arm-gcc-4.5.1
+	在/etc/profile下面配置环境变量编译uboot 
+	export PATH=$PATH:/home/master/ARM/4.5.1/bin
+	sudo apt install bison flex
+	sudo apt-get install libncurses5-dev
+	make distclean
+	make SMART210_config
+	make ARCH=arm CROSS_COMPILE=arm-linux-
+	#define CONFIG_OF_LIBFDT 1 支持设备树	
+	加入编译有未定义的错误就make distclean
+	uboot编译LCD模块
+	#define CONFIG_LCD 1
+	会遇见这些错误
+	common/libcommon.o: In function `lcd_drawchars':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:236: undefined reference to `lcd_line_length'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:236: undefined reference to `lcd_base'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:236: undefined reference to `lcd_color_bg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:236: undefined reference to `lcd_color_fg'
+	common/libcommon.o: In function `lcd_clear':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:361: undefined reference to `lcd_setcolreg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:362: undefined reference to `lcd_setcolreg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:363: undefined reference to `lcd_setcolreg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:364: undefined reference to `lcd_setcolreg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:365: undefined reference to `lcd_setcolreg'
+	common/libcommon.o:/home/master/ARM/smart210-uboot-master/common/lcd.c:366: more undefined references to `lcd_setcolreg' follow
+	在lcd.c文件里面初始化这些int型变量
+	比如 int lcd_line_length = 0;
+
+	common/libcommon.o: In function `lcd_clear':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `lcd_color_fg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `lcd_color_bg'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `lcd_line_length'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `panel_info'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `lcd_base'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `lcd_console_address'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `console_col'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:396: undefined reference to `console_row'
+	common/libcommon.o: In function `console_newline':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:136: undefined reference to `console_row'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:136: undefined reference to `console_col'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:136: undefined reference to `panel_info'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:136: undefined reference to `lcd_line_length'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:136: undefined reference to `lcd_console_address'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:136: undefined reference to `lcd_color_bg'
+	common/libcommon.o: In function `lcd_putc':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:172: undefined reference to `console_col'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:172: undefined reference to `panel_info'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:172: undefined reference to `console_row'
+	common/libcommon.o: In function `lcd_init':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:411: undefined reference to `lcd_ctrl_init'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:414: undefined reference to `lcd_enable'
+	common/libcommon.o: In function `drv_lcd_init':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:350: undefined reference to `panel_info'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:350: undefined reference to `lcd_base'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:350: undefined reference to `lcd_line_length'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:350: undefined reference to `console_col'
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:350: undefined reference to `console_row'
+	common/libcommon.o: In function `lcd_setmem':
+	/home/master/ARM/smart210-uboot-master/common/lcd.c:457: undefined reference to `panel_info'
+
+	内核网卡设备树配置
+	ethernet@88000000 {
+		compatible = "davicom,dm9000";
+		reg = <0x88000000 0x2 0x88000008 0x2>;
+		interrupt-parent = <&gph0>;
+		interrupts = <7 4>;
+		local-mac-address = [00 40 5c 26 0a 5b];
+		davicom,no-eeprom;
+        	clocks = <&clocks CLK_SROMC>;
+        	clock-names = "sromc";
+	};
+	添加时钟
+	&xxti {
+	clock-frequency = <24000000>;
+	};
+
+	linux-4.19/drivers/net/ethernet/davicom/dm9000.c
+	#include <linux/clk.h>   
+	const char *clk_name;
+	/* Enable clock if specified */
+    if (!of_property_read_string(dev->of_node, "clock-names", &clk_name)) {
+        struct clk *clk = devm_clk_get(dev, clk_name);
+        if (IS_ERR(clk)) {
+            dev_err(dev, "cannot get clock of %s\n", clk_name);
+            ret = PTR_ERR(clk);
+            goto out;
+        }
+        clk_prepare_enable(clk);
+        dev_info(dev, "enable clock '%s'\n", clk_name);
+    }
+2023-6-1
+    "mkimage" command not found - U-Boot images will not be built
+    sudo cp /home/master/ARM/smart210-uboot-master/tools/mkimage /bin/
+
+    如果遇见错误
+    NAND read from offset 600000 failed -74
+    在uboot的配置文件设置#define CONFIG_ENV_OFFSET 0x100000
+
+    如果遇见错误LCD阻塞uboot初始化
+    [LCD] Initializing LCD frambuffer at 3ffe4000
+    在static int lcd_init(void *lcdbase)这个函数里面的初始化
+    stdio.c-->drv_lcd_init-->lcd_init
+    commom/console.c--->int console_init_r(void)这个函数阻塞了后面的初始化
+    需要这两段代码注释掉 因为根本没有这个函数和变量
+    gd->flags |= GD_FLG_DEVINIT;	/* device initialization completed */
+	stdio_print_current_devices();
+
+2023-6-2
+	安装NFS
+	配置静态IP地址 sudo vi /etc/network/interfaces
+	auto ens33
+	iface ens33 inet static
+		address 192.168.1.15
+		netmask 255.255.255.0
+		gateway 192.168.1.1
+
+	如果碰见错误Failed to mount devtmpfs at /dev: No such device
+	设置Linux menuconfig CONFIG_DEVTMPFS
+	如果碰见错误开机启动信息显示 Failed to insert module ‘autofs4’
+	把File Systems --> 里的 Kernel automounter version 4 support (also supports v3) 选上
+	信息显示systemd[1] failed to mount tmpfs at /sys/fs/cgroup no such file or directory
+	General Setup-->Control Group Support
+	要设置Ubuntu的登陆账户和密码
+	[ TIME ] Timed out waiting for device dev-ttyS0.device. [DEPEND] Dependency failed for Serial Getty on ttyS0
+	在Ubuntu的根文件系统下 添加/etc/init/ttySAC0.conf配置文件,添加如下内容
+	# ttySAC0 - getty
+	#
+	# This service maintains a getty on ttyS0 from the point the system is
+	# started until it is shut down again.
+
+	start on stopped rc RUNLEVEL=[2345] and container CONTAINER=lxc
+	stop on runlevel [!2345]  
+	respawn 
+	exec /sbin/getty -L 115200 ttySAC0 vt102
+	在建立软链接
+	ln -s ./etc/systemd/system/serial-getty@ttyS0.service ./etc/systemd/system/getty.target.wants/
